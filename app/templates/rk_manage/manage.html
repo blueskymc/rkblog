@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_title %}热控管理主页{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>热控管理主页</h1>
+</div>
+<div class="col-md-6">
+    <li><a href="{{ url_for('rk_manage.create_project')}}">添加项目</a></li>
+    <li><a href="{{ url_for('rk_manage.create_dcs')}}">添加DCS</a></li>
+    <li><a href="{{ url_for('rk_manage.create_relation')}}">添加DCS与项目关系</a></li>
+</div>
+<div>  </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}

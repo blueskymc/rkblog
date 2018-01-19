@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}热控技术交流{% endblock %}
+
+{% block index %}"active"{% endblock %}
+
+{% block page_content %}
+            <div class="row">
+                <div class="col-md-8 blog-main">
+                    {% for blog in blogs%}
+                    {% if blog.id != 998 %}
+                    <div class="blog-post">
+                        <h2 class="blog-post-title"><a href="{{ url_for('main.blog', id=blog.id) }}">{{ blog.name }}</a></h2>
+                        {% include "_labels.html" %}
+                        <h5></h5>
+                        <p class="blog-post-meta" id="{{ blog.name }}">
+                            {{ moment(blog.create_at).format('LL') }} &nbsp;                        
+                            <a href="{{ url_for('main.blog', id=blog.id) }}#comments">
+                                <span class="glyphicon glyphicon-comment" aria-hidden="true"></span>&nbsp;评论({{ blog.comments.count() }})
+                            </a> &nbsp;
+                            {% if current_user.is_administrator() %}<a href="{{ url_for('manage.edit_blog', id=blog.id) }}">编辑</a>{% endif %}
+                        </p>
+                        <p class="index-summary">
+                            {% if blog.summary_html %}
+                                {{ blog.summary_html | striptags }}
+                            {% else %}
+                                {{ blog.summary  }}
+                            {% endif %}
+                        </p>
+                        <hr>
+                    </div>
+                    {% endif %}
+                    {% endfor %}    
+                </div>
+                <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
+                    <div class="sidebar-module sidebar-module-inset">
+                        <h4>About me</h4>
+                        <p>欢迎访问本站</p>
+                    </div>
+                    <div class="sidebar-module">
+                        <h4><b>网站导航</b></h4>
+                        <ol class="list-unstyled">                           
+                            <li><a href="http://www.sinosimu.com/main/user/index.asp" target="_blank">
+                                <img class="sinosimu" src="{{ url_for('static', filename='sinosimu.png') }}"> 公司主页</a>
+                            </li>
+                        </ol>
+                        <hr>
+                        <h4><b>用户文章</b></h4>
+                        <ol class="list-unstyled">
+                            <li><a href="{{ url_for('main.index')}}">全部</a></li>
+                            {% for user in users %}
+                            <li><a href="{{ url_for('main.index', user=user.username)}}">{{ user.username }}({{ user.blogs.count() }})</a></li>
+                            {% endfor %}
+                        </ol>
+                        <h4><b>文章专题</b></h4>
+                        <ol class="list-unstyled">
+                            <li><a href="{{ url_for('main.index')}}">全部</a></li>
+                            {% for subject in subjects %}
+                            <li><a href="{{ url_for('main.index', subject=subject.name)}}">{{ subject.name }}({{ subject.blogs.count() }})</a></li>
+                            {% endfor %}
+                        </ol>
+                        <h4><b>文章分类</b></h4>
+                        <ol class="list-unstyled">
+                            <li><a href="{{ url_for('main.index')}}">全部</a></li>
+                            {% for label in labels %}
+                            <li><a href="{{ url_for('main.index', label=label.name)}}">{{ label.name }}({{ label.blogs.count() }})</a></li>
+                            {% endfor %}
+                        </ol>
+
+                        <h4><b>文章档案库</b></h4>
+                        <ol class="list-unstyled">
+                            <li><a href="{{ url_for('main.index')}}">全部</a></li>
+                            {% for archive in archives %}
+                            <li><a href="{{ url_for('main.index', archive=archive.name)}}">{{ archive.name }}({{ archive.blogs.count() }})</a></li>
+                            {% endfor %}
+                        </ol>
+                    </div>               
+                </div><!-- /.blog-sidebar -->
+            </div><!-- /.row -->
+{% if pagination %}
+<div class="col-md-8 pagination-index">
+    <div class="pagination-Nav">
+        {% if label %}
+        {{ macros.pagination_widget(pagination, 'main.index', label=label.name) }}
+        {% else %}
+        {{ macros.pagination_widget(pagination, 'main.index') }}
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
