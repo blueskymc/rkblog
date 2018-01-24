@@ -24,6 +24,7 @@
                 <div id="navbar" class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
                         <li class={% block index %}"#active"{% endblock %}><a href="{{ url_for('main.index') }}">主页</a></li>
+                        <li><a href="{{ url_for('rk_manage.manage') }}">热控管理</a></li>
                         <li class={% block about %}"#active"{% endblock %}><a href="{{ url_for('main.blog', id=998) }}">关于本站</a></li>
                         <li class=""><a href="#"></a></li>
                     </ul>

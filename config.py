@@ -15,6 +15,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
+    MYSQL_PASSWORD = '123456'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN') or 'mc1515@163.com'
     FLASKY_MAIL_SENDER = 'Admin <mc1515@163.com>'
@@ -28,7 +29,7 @@ class Config(object):
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@localhost:3306/rk_blog'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:' + Config.MYSQL_PASSWORD + '@localhost:3306/rk_blog'
 
 
 class TestingCofig(Config):

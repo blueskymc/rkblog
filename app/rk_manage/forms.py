@@ -50,4 +50,7 @@ class DcsForm(FlaskForm):
 class DcsProForm(FlaskForm):
     dcs = SelectField('选择DCS系统', validators=[DataRequired()])
     pro = SelectField('选择项目', validators=[DataRequired()])
+    sys = SelectField('选择系统名称', validators=[DataRequired()])
+    hmi = SelectField('选择画面方式', validators=[DataRequired()])
+    cfg = SelectField('选择组态方式', validators=[DataRequired()])
     submit = SubmitField('添加关系')

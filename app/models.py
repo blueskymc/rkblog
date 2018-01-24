@@ -300,8 +300,19 @@ class Rk_User(db.Model):
 # 分类功能：Blog和Label多对多关系的中间表
 project_dcs = db.Table('project_dcs',
     db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
-    db.Column('dcs_id', db.Integer, db.ForeignKey('dcs.id'))
+    db.Column('dcs_id', db.Integer, db.ForeignKey('dcs.id')),
+    db.Column('sys_id', db.Integer, db.ForeignKey('subsystem.id')),
+    db.Column('hmi_id', db.Integer, db.ForeignKey('hmi_mode.id')),
+    db.Column('cfg_id', db.Integer, db.ForeignKey('config_mode.id'))
 )
+
+# 分类功能：Blog和Label多对多关系的中间表
+# class Project_Dcs(db.Model):
+#     __tablename__ = 'project_dcs'
+#
+#     id = db.Column(db.Integer, primary_key=True)
+#     project_id = db.Column(db.Integer)
+#     dcs_id = db.Column(db.Integer)
 
 # 项目
 class Project(db.Model):
@@ -329,3 +340,54 @@ class Project(db.Model):
         super(Project, self).__init__(**kw)
         db.session.add(self)
         db.session.commit()
+
+# 子系统
+class Subsystem(db.Model):
+    __tablename__ = 'subsystem'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+
+    @staticmethod
+    def generate_default():
+        if not Subsystem.query.count():
+            L = ['DCS（主机）', 'DCS', 'DEH', 'MEH', 'ETS', 'FGD（脱硫）', 'SCR（脱硝）',
+                 'BOP（辅网）', 'BOP-化水', 'BOP-输煤', 'BOP-制氢', 'BOP-制氨',
+                 'BOP-精处理', 'BOP-除灰', 'BOP-除渣', 'COM（公用）', 'COM-空压机',
+                 'COM-吹灰', 'COM-热网', 'COM-燃油泵房', 'TCS（燃机DEH）']
+            for name in L:
+                l = Subsystem(name=name)
+                db.session.add(l)
+                db.session.commit()
+
+# 画面方式
+class HmiMode(db.Model):
+    __tablename__ = 'hmi_mode'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+
+    @staticmethod
+    def generate_default():
+        if not HmiMode.query.count():
+            L = ['单独站', '含在DCS', '含在FGD', '含在BOP', '含在COM', '就地实现', '激励式', '其他']
+            for name in L:
+                l = HmiMode(name=name)
+                db.session.add(l)
+                db.session.commit()
+
+# 画面方式
+class ConfigMode(db.Model):
+    __tablename__ = 'config_mode'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+
+    @staticmethod
+    def generate_default():
+        if not ConfigMode.query.count():
+            L = ['转换', '手动组态', '激励式', '其他']
+            for name in L:
+                l = ConfigMode(name=name)
+                db.session.add(l)
+                db.session.commit()

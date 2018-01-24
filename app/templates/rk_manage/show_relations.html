@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_title %}显示Dcs与项目的关系{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>DCS与项目关系列表</h1>
+</div>
+<div class="table-responsive">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th class="th-left">DCS</th>
+				<th>项目名</th>
+				<th>子系统</th>
+				<th>画面方式</th>
+				<th>组态方式</th>
+				<th>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for item in rels %}
+			<tr>
+				<td class="th-left">{{item['dcsname']}}</td>
+				<td>{{item['projectname']}}</td>
+				<td>{{item['sysname']}}</td>
+				<td>{{item['hminame']}}</td>
+				<td>{{item['cfgname']}}</td>
+				<td>
+					<a href="{{ url_for('rk_manage.edit_relation', dcsname=item['dcsname'], proname=item['projectname']) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true">-编辑</span></a>
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+</div>
+<div>  </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}

@@ -14,7 +14,7 @@ from flask import send_from_directory, abort
 from . import main
 from .. import db
 from ..decorators import rkuser_required
-from ..models import User, Blog, Comment, Label, Subject, Archive
+from ..models import User, Blog, Comment, Label, Subject, Archive, Subsystem, HmiMode, ConfigMode
 from .forms import CreateCommentForm
 import logging
 
@@ -28,6 +28,10 @@ def index():
         User.create_administrator()
         Blog.create_about_blog()
         Label.generate_default()
+        Subsystem.generate_default()
+        HmiMode.generate_default()
+        ConfigMode.generate_default()
+
     if not current_user.is_active:
         flash('您还未登录，请先登录')
         return render_template('index.html')
