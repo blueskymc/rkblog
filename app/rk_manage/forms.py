@@ -26,7 +26,7 @@ class ProjectForm(FlaskForm):
     sign_date = StringField('合同签订日期')
     execute_date = StringField('合同执行日期')
     note = TextAreaField('备注')
-    submit = SubmitField('添加项目')
+    submit = SubmitField('提交')
 
 # 创建/编辑DCS
 class DcsForm(FlaskForm):
@@ -44,7 +44,7 @@ class DcsForm(FlaskForm):
     alg_keeper = StringField('算法保管人')
     alg_header = StringField('算法前缀')
     note = TextAreaField('备注')
-    submit = SubmitField('添加DCS')
+    submit = SubmitField('提交')
 
 # 创建/编辑DCS与项目映射关系
 class DcsProForm(FlaskForm):
@@ -53,4 +53,21 @@ class DcsProForm(FlaskForm):
     sys = SelectField('选择系统名称', validators=[DataRequired()])
     hmi = SelectField('选择画面方式', validators=[DataRequired()])
     cfg = SelectField('选择组态方式', validators=[DataRequired()])
-    submit = SubmitField('添加关系')
+    out = SelectField('选择出库项目', validators=[DataRequired()])
+    submit = SubmitField('提交')
+
+# 筛选项目
+class ProjectFilterForm(FlaskForm):
+    pro = SelectField('选择项目', validators=[DataRequired()])
+    submit = SubmitField('筛选')
+
+# 筛选DCS
+class DcsFilterForm(FlaskForm):
+    dcs = SelectField('选择DCS系统', validators=[DataRequired()])
+    submit = SubmitField('筛选')
+
+# 筛选关系
+class RelFilterForm(FlaskForm):
+    dcs = SelectField('选择DCS系统', validators=[DataRequired()])
+    pro = SelectField('选择项目', validators=[DataRequired()])
+    submit = SubmitField('筛选')

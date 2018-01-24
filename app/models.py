@@ -298,21 +298,14 @@ class Rk_User(db.Model):
         db.session.commit()
 
 # 分类功能：Blog和Label多对多关系的中间表
-project_dcs = db.Table('project_dcs',
-    db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
-    db.Column('dcs_id', db.Integer, db.ForeignKey('dcs.id')),
-    db.Column('sys_id', db.Integer, db.ForeignKey('subsystem.id')),
-    db.Column('hmi_id', db.Integer, db.ForeignKey('hmi_mode.id')),
-    db.Column('cfg_id', db.Integer, db.ForeignKey('config_mode.id'))
-)
+# project_dcs = db.Table('project_dcs',
+#     db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
+#     db.Column('dcs_id', db.Integer, db.ForeignKey('dcs.id')),
+#     db.Column('sys_id', db.Integer, db.ForeignKey('subsystem.id')),
+#     db.Column('hmi_id', db.Integer, db.ForeignKey('hmi_mode.id')),
+#     db.Column('cfg_id', db.Integer, db.ForeignKey('config_mode.id'))
+# )
 
-# 分类功能：Blog和Label多对多关系的中间表
-# class Project_Dcs(db.Model):
-#     __tablename__ = 'project_dcs'
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     project_id = db.Column(db.Integer)
-#     dcs_id = db.Column(db.Integer)
 
 # 项目
 class Project(db.Model):
@@ -331,10 +324,10 @@ class Project(db.Model):
     note = db.Column(db.String(64))
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     # 多对多关系模型
-    dcses = db.relationship('DCS',
-                            secondary=project_dcs,
-                            backref=db.backref('projects', lazy='dynamic'),
-                            lazy='dynamic')
+    # dcses = db.relationship('DCS',
+    #                         secondary=project_dcs,
+    #                         backref=db.backref('projects', lazy='dynamic'),
+    #                         lazy='dynamic')
 
     def __init__(self, **kw):
         super(Project, self).__init__(**kw)
@@ -391,3 +384,23 @@ class ConfigMode(db.Model):
                 l = ConfigMode(name=name)
                 db.session.add(l)
                 db.session.commit()
+
+# 分类功能：Blog和Label多对多关系的中间表
+class Project_Dcs(db.Model):
+    __tablename__ = 'project_dcs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer)
+    dcs_id = db.Column(db.Integer)
+    sys_id = db.Column(db.Integer)
+    hmi_id = db.Column(db.Integer)
+    cfg_id = db.Column(db.Integer)
+    pro_out = db.Column(db.String(64))  # 出库项目
+
+    def __init__(self, **kw):
+        super(Project_Dcs, self).__init__(**kw)
+        db.session.add(self)
+        db.session.commit()
+#     db.Column('sys_id', db.Integer, db.ForeignKey('subsystem.id')),
+#     db.Column('hmi_id', db.Integer, db.ForeignKey('hmi_mode.id')),
+#     db.Column('cfg_id', db.Integer, db.ForeignKey('config_mode.id'))
