@@ -8,7 +8,8 @@ CREATE VIEW `view_dcs_project` AS (
         `project`.`name` AS `projectname`,
         `subsystem`.`name` AS `sysname`,
         `hmi_mode`.`name` AS `hminame`,
-        `config_mode`.`name` AS `cfgname`
+        `config_mode`.`name` AS `cfgname`,
+        `project_dcs`.`pro_out` AS `outname`
     FROM
         (
             (
@@ -29,7 +30,8 @@ CREATE VIEW `view_project_dcs` AS (
         `dcs`.`name` AS `dcsname`,
         `subsystem`.`name` AS `sysname`,
         `hmi_mode`.`name` AS `hminame`,
-        `config_mode`.`name` AS `cfgname`
+        `config_mode`.`name` AS `cfgname`,
+        `project_dcs`.`pro_out` AS `outname`
     FROM
         (
             (

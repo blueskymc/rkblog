@@ -9,22 +9,25 @@ ___author__ = 'MaCong'
 
 from flask import render_template, url_for, redirect, request, flash
 from flask_login import login_required, current_user
+from flask import send_from_directory, abort
 from datetime import datetime
 import time
 import hashlib
+import os
 from . import rk_manage
-from .. import db
+from .. import db, uploadset
 from ..models import User, Project, Project_Dcs, DCS, Rk_User, Subsystem, HmiMode, ConfigMode
 from ..decorators import admin_required, rkuser_required
 from ..MySqlHelper import MySQL_Utils
-from .forms import ProjectForm, DcsForm, DcsProForm, DcsFilterForm, ProjectFilterForm, RelFilterForm
+from ..AccessHelper import AccessHelper
+from .forms import *
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
 # 热控管理主页
 @rk_manage.route('/index')
-@admin_required
+@rkuser_required
 @login_required
 def manage():
     return render_template('rk_manage/manage.html')
@@ -46,13 +49,26 @@ def create_project():
             pro = Project(name=form.name.data,
                         customer=form.customer.data,
                         fullname=form.fullname.data,
-                        rk_user=form.rk_user.data,
+                        rk_user=rkuserowner,
                         team_leader=form.team_leader.data,
                         project_leader=form.project_leader.data,
                         sign_date=form.sign_date.data,
                         execute_date=form.execute_date.data,
                         note=form.note.data,
                         author_id=user.id)
+
+            if form.file_star.data:
+                pro.upload_star_real_name = form.file_star.data.filename
+                name_star = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+                pro.upload_star_file = uploadset.save(form.file_star.data, name=name_star + '.')
+                pro.upload_star_time = datetime.utcnow().date()
+
+            if form.file_converter.data:
+                pro.upload_converter_real_name = form.file_converter.data.filename
+                name_converter = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[
+                                 :15]
+                pro.upload_converter_file = uploadset.save(form.file_converter.data, name=name_converter + '.')
+                pro.upload_converter_time = datetime.utcnow().date()
             db.session.add(pro)
         else:
             pro = Project(name=form.name.data,
@@ -64,13 +80,27 @@ def create_project():
                         sign_date=form.sign_date.data,
                         execute_date=form.execute_date.data,
                         note=form.note.data)
+            if form.file_star.data:
+                pro.upload_star_real_name = form.file_star.data.filename
+                name_star = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+                pro.upload_star_file = uploadset.save(form.file_star.data, name=name_star + '.')
+                pro.upload_star_time = datetime.utcnow().date()
+                pro.upload_star_user = current_user.username
+
+            if form.file_converter.data:
+                pro.upload_converter_real_name = form.file_converter.data.filename
+                name_converter = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[
+                                 :15]
+                pro.upload_converter_file = uploadset.save(form.file_converter.data, name=name_converter + '.')
+                pro.upload_converter_time = datetime.utcnow().date()
+                pro.upload_converter_user = current_user.username
             db.session.add(pro)
         return redirect(url_for('rk_manage.show_project'))
     return render_template('rk_manage/create_project.html', form=form)
 
 # 编辑工程
 @rk_manage.route('/edit_project/<int:id>', methods=['GET', 'POST'])
-@admin_required
+@rkuser_required
 @login_required
 def edit_project(id):
     pro = Project.query.get_or_404(id)
@@ -84,7 +114,7 @@ def edit_project(id):
         pro_edit.name = form.name.data
         pro_edit.customer = form.customer.data,
         pro_edit.fullname = form.fullname.data,
-        pro_edit.rk_user = form.rk_user.data,
+        pro_edit.rk_user = rkuserowner,
         pro_edit.team_leader = form.team_leader.data,
         pro_edit.project_leader = form.project_leader.data,
         pro_edit.sign_date = form.sign_date.data,
@@ -93,6 +123,27 @@ def edit_project(id):
         if rkuserowner != '无':
             user = User.query.filter_by(username=rkuserowner).first()
             pro_edit.author_id = user.id
+        db.session.commit()
+        if form.file_star.data:
+            filePath = os.path.join('app\\_uploads', pro_edit.upload_star_file)  # 先删除旧文件
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            pro_edit.upload_star_real_name = form.file_star.data.filename
+            name_star = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            pro_edit.upload_star_file = uploadset.save(form.file_star.data, name=name_star + '.')
+            pro_edit.upload_star_time = datetime.utcnow().date()
+            pro_edit.upload_star_user = current_user.username
+
+        if form.file_converter.data:
+            filePath = os.path.join('app\\_uploads', pro_edit.upload_converter_file)  # 先删除旧文件
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            pro_edit.upload_converter_real_name = form.file_converter.data.filename
+            name_converter = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            pro_edit.upload_converter_file = uploadset.save(form.file_converter.data, name=name_converter + '.')
+            pro_edit.upload_converter_time = datetime.utcnow().date()
+            pro_edit.upload_converter_user = current_user.username
+
         db.session.commit()
         return redirect(url_for('rk_manage.show_project'))
     form.name.data = pro.name
@@ -134,45 +185,43 @@ def create_dcs():
     form.rk_user_owner.choices += [(r.username, r.username) for r in uses]
     if form.validate_on_submit():
         rkuserowner = form.rk_user_owner.data
-
+        dcs = DCS(name=form.name.data,
+                  company_name=form.company_name.data,
+                  version=form.version.data,
+                  plateform=form.plateform.data,
+                  is_convert=form.is_convert.data,
+                  type_dcs=form.type_dcs.data,
+                  converter_developer=form.converter_developer.data,
+                  alg_developer=form.alg_developer.data,
+                  sourcecode_keeper=form.sourcecode_keeper.data,
+                  sourcecode_owner=form.sourcecode_owner.data,
+                  alg_keeper=rkuserowner,
+                  alg_header=form.alg_header.data,
+                  note=form.note.data)
         if rkuserowner != '无':
             user = User.query.filter_by(username=rkuserowner).first()
-            dcs = DCS(name=form.name.data,
-                          company_name=form.company_name.data,
-                          version=form.version.data,
-                          plateform=form.plateform.data,
-                          is_convert=form.is_convert.data,
-                          type_dcs=form.type_dcs.data,
-                          converter_developer=form.converter_developer.data,
-                          alg_developer=form.alg_developer.data,
-                          sourcecode_keeper=form.sourcecode_keeper.data,
-                          sourcecode_owner=form.sourcecode_owner.data,
-                          alg_keeper=form.alg_keeper.data,
-                          alg_header=form.alg_header.data,
-                          note=form.note.data,
-                          author_id=user.id)
-            db.session.add(dcs)
-        else:
-            dcs = DCS(name=form.name.data,
-                          company_name=form.company_name.data,
-                          version=form.version.data,
-                          plateform=form.plateform.data,
-                          is_convert=form.is_convert.data,
-                          type_dcs=form.type_dcs.data,
-                          converter_developer=form.converter_developer.data,
-                          alg_developer=form.alg_developer.data,
-                          sourcecode_keeper=form.sourcecode_keeper.data,
-                          sourcecode_owner=form.sourcecode_owner.data,
-                          alg_keeper=form.alg_keeper.data,
-                          alg_header=form.alg_header.data,
-                          note=form.note.data)
-            db.session.add(dcs)
+            dcs.author_id = user.id
+
+        if form.file_star.data:
+            dcs.upload_star_real_name = form.file_star.data.filename
+            name_star = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            dcs.upload_star_file = uploadset.save(form.file_star.data, name=name_star+'.')
+            dcs.upload_star_time = datetime.utcnow().date()
+            dcs.upload_star_user = current_user.username
+
+        if form.file_converter.data:
+            dcs.upload_converter_real_name = form.file_converter.data.filename
+            name_converter = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            dcs.upload_converter_file = uploadset.save(form.file_converter.data, name=name_converter+'.')
+            dcs.upload_converter_time = datetime.utcnow().date()
+            dcs.upload_converter_user = current_user.username
+        db.session.add(dcs)
         return redirect(url_for('rk_manage.show_dcs'))
     return render_template('rk_manage/create_dcs.html', form=form)
 
 # 编辑DCS
 @rk_manage.route('/edit_dcs/<int:id>', methods=['GET', 'POST'])
-@admin_required
+@rkuser_required
 @login_required
 def edit_dcs(id):
     dcs_old = DCS.query.get_or_404(id)
@@ -194,12 +243,32 @@ def edit_dcs(id):
         dcs_edit.alg_developer = form.alg_developer.data
         dcs_edit.sourcecode_keeper = form.sourcecode_keeper.data
         dcs_edit.sourcecode_owner = form.sourcecode_owner.data
-        dcs_edit.alg_keeper = form.alg_keeper.data
+        dcs_edit.alg_keeper = rkuserowner
         dcs_edit.alg_header = form.alg_header.data
         dcs_edit.note = form.note.data
         if rkuserowner != '无':
             user = User.query.filter_by(username=rkuserowner).first()
             dcs_edit.author_id = user.id
+
+        if form.file_star.data:
+            filePath = os.path.join('app\\_uploads', dcs_edit.upload_star_file)  # 先删除旧文件
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            dcs_edit.upload_star_real_name = form.file_star.data.filename
+            name_star = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            dcs_edit.upload_star_file = uploadset.save(form.file_star.data, name=name_star + '.')
+            dcs_edit.upload_star_time = datetime.utcnow().date()
+            dcs_edit.upload_star_user = current_user.username
+
+        if form.file_converter.data:
+            filePath = os.path.join('app\\_uploads', dcs_edit.upload_converter_file)  # 先删除旧文件
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            dcs_edit.upload_converter_real_name = form.file_converter.data.filename
+            name_converter = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            dcs_edit.upload_converter_file = uploadset.save(form.file_converter.data, name=name_converter + '.')
+            dcs_edit.upload_converter_time = datetime.utcnow().date()
+            dcs_edit.upload_converter_user = current_user.username
         db.session.commit()
         return redirect(url_for('rk_manage.show_dcs'))
 
@@ -263,7 +332,8 @@ def edit_dcs(id):
 @login_required
 def create_relation():
     dcses = DCS.query.all()
-    pros = Project.query.all()
+    pros = get_cur_user_pros()
+    pros_out = Project.query.all()
     subs = Subsystem.query.all()
     hmis = HmiMode.query.all()
     cfgs = ConfigMode.query.all()
@@ -278,8 +348,8 @@ def create_relation():
     form.hmi.choices += [(r.name, r.name) for r in hmis]
     form.cfg.choices = []
     form.cfg.choices += [(r.name, r.name) for r in cfgs]
-    form.out.choices = []
-    form.out.choices += [(r.name, r.name) for r in pros]
+    form.out.choices = [('无', '无')]
+    form.out.choices += [(r.name, r.name) for r in pros_out]
     if form.validate_on_submit():
         dcsSelect = DCS.query.filter_by(name=form.dcs.data).first()
         proSelect = Project.query.filter_by(name=form.pro.data).first()
@@ -298,17 +368,15 @@ def create_relation():
     return render_template('rk_manage/dcs_project.html', form=form)
 
 # 编辑DCS与工程关系
-@rk_manage.route('/edit_relation/<dcsname>/<proname>/<subsystem>', methods=['GET', 'POST'])
+@rk_manage.route('/edit_relation/<int:id>', methods=['GET', 'POST'])
 @rkuser_required
 @login_required
-def edit_relation(dcsname, proname, subsystem):
-    dcs_id = DCS.query.filter_by(name=dcsname).first().id
-    pro_id = Project.query.filter_by(name=proname).first().id
-    sub_id = Subsystem.query.filter_by(name=subsystem).first().id
-    pd_edit = Project_Dcs.query.filter_by(project_id=pro_id).filter_by(dcs_id=dcs_id).filter_by(sys_id=sub_id).first()
+def edit_relation(id):
+    pd_edit = Project_Dcs.query.filter_by(id=id).first()
 
     dcses = DCS.query.all()
-    pros = Project.query.all()
+    pros = get_cur_user_pros()
+    pros_out = Project.query.all()
     subs = Subsystem.query.all()
     hmis = HmiMode.query.all()
     cfgs = ConfigMode.query.all()
@@ -323,8 +391,8 @@ def edit_relation(dcsname, proname, subsystem):
     form.hmi.choices += [(r.name, r.name) for r in hmis]
     form.cfg.choices = []
     form.cfg.choices += [(r.name, r.name) for r in cfgs]
-    form.out.choices = []
-    form.out.choices += [(r.name, r.name) for r in pros]
+    form.out.choices = [('无', '无')]
+    form.out.choices += [(r.name, r.name) for r in pros_out]
     if form.validate_on_submit():
         dcsSelect = DCS.query.filter_by(name=form.dcs.data).first()
         proSelect = Project.query.filter_by(name=form.pro.data).first()
@@ -353,19 +421,16 @@ def edit_relation(dcsname, proname, subsystem):
 @rkuser_required
 @login_required
 def show_project():
-    if current_user.is_administrator():
-        pros = Project.query.all()
-        form = ProjectFilterForm()
-        form.pro.choices = [('全部', '全部')]
-        form.pro.choices += [(r.name, r.name) for r in pros]
-        if form.validate_on_submit():
-            if form.pro.data == '全部':
-                return render_template('rk_manage/show_project.html', projects=pros, form=form)
-            proSelect = Project.query.filter_by(name=form.pro.data)
-            return render_template('rk_manage/show_project.html', projects=proSelect, form=form)
-        return render_template('rk_manage/show_project.html', projects=pros, form=form)
-    else:
-        flash('您不是管理员')
+    pros = get_cur_user_pros()
+    form = ProjectFilterForm()
+    form.pro.choices = [('全部', '全部')]
+    form.pro.choices += [(r.name, r.name) for r in pros]
+    if form.validate_on_submit():
+        if form.pro.data == '全部':
+            return render_template('rk_manage/show_project.html', projects=pros, form=form)
+        proSelect = Project.query.filter_by(name=form.pro.data)
+        return render_template('rk_manage/show_project.html', projects=proSelect, form=form)
+    return render_template('rk_manage/show_project.html', projects=pros, form=form)
         #return redirect(url_for('rk_manage.manage'))
 
 # 显示DCS
@@ -373,24 +438,21 @@ def show_project():
 @rkuser_required
 @login_required
 def show_dcs():
-    if current_user.is_administrator():
-        dcs = DCS.query.all()
-        for d in dcs:
-            if d.author_id:
-                d.alg_keeper = User.query.filter_by(id=d.author_id).first().username
-        form = DcsFilterForm()
-        form.dcs.choices = [('全部', '全部')]
-        form.dcs.choices += [(r.name, r.name) for r in dcs]
-        if form.validate_on_submit():
-            if form.dcs.data == '全部':
-                return render_template('rk_manage/show_dcs.html', dcses=dcs, form=form)
-            dcsSelect = DCS.query.filter_by(name=form.dcs.data).first()
-            if dcsSelect.author_id:
-                dcsSelect.alg_keeper = User.query.filter_by(id=dcsSelect.author_id).first().username
-            return render_template('rk_manage/show_dcs.html', dcses=[dcsSelect], form=form)
-        return render_template('rk_manage/show_dcs.html', dcses=dcs, form=form)
-    else:
-        flash('您不是管理员')
+    dcs = get_cur_user_dcses()
+    for d in dcs:
+        if d.author_id:
+            d.alg_keeper = User.query.filter_by(id=d.author_id).first().username
+    form = DcsFilterForm()
+    form.dcs.choices = [('全部', '全部')]
+    form.dcs.choices += [(r.name, r.name) for r in dcs]
+    if form.validate_on_submit():
+        if form.dcs.data == '全部':
+            return render_template('rk_manage/show_dcs.html', dcses=dcs, form=form)
+        dcsSelect = DCS.query.filter_by(name=form.dcs.data).first()
+        if dcsSelect.author_id:
+            dcsSelect.alg_keeper = User.query.filter_by(id=dcsSelect.author_id).first().username
+        return render_template('rk_manage/show_dcs.html', dcses=[dcsSelect], form=form)
+    return render_template('rk_manage/show_dcs.html', dcses=dcs, form=form)
         #return redirect(url_for('rk_manage.manage'))
 
 
@@ -402,7 +464,7 @@ def show_relations():
     sql = MySQL_Utils()
     sqlstr = "SELECT * FROM view_dcs_project vdp WHERE vdp.dcsname is not null AND vdp.projectname is not null"
     pros = Project.query.all()
-    dcs = DCS.query.all()
+    dcs = get_cur_user_dcses()
     form = RelFilterForm()
     form.pro.choices = [('全部', '全部')]
     form.pro.choices += [(r.name, r.name) for r in pros]
@@ -414,10 +476,10 @@ def show_relations():
         if form.dcs.data != '全部':
             sqlstr += " AND vdp.dcsname='%s'" % form.dcs.data
         result = sql.exec_sql(sqlstr)
-        relations = list(result)
+        relations = get_cur_user_dcs2pros(list(result))
         return render_template('rk_manage/show_relations.html', rels=relations, form=form)
     result = sql.exec_sql(sqlstr)
-    relations = list(result)
+    relations = get_cur_user_dcs2pros(list(result))
     return render_template('rk_manage/show_relations.html', rels=relations, form=form)
 
 # 显示工程和DCS关系
@@ -427,7 +489,7 @@ def show_relations():
 def show_relations_pd():
     sql = MySQL_Utils()
     sqlstr = "SELECT * FROM view_project_dcs vpd WHERE vpd.dcsname is not null AND vpd.projectname is not null"
-    pros = Project.query.all()
+    pros = get_cur_user_pros()
     dcs = DCS.query.all()
     form = RelFilterForm()
     form.pro.choices = [('全部', '全部')]
@@ -440,8 +502,73 @@ def show_relations_pd():
         if form.dcs.data != '全部':
             sqlstr += " AND vpd.dcsname='%s'" % form.dcs.data
         result = sql.exec_sql(sqlstr)
-        relations = list(result)
+        relations = get_cur_user_pro2dcses(list(result))
+
         return render_template('rk_manage/show_relations_pd.html', rels=relations, form=form)
     result = sql.exec_sql(sqlstr)
-    relations = list(result)
+    relations = get_cur_user_pro2dcses(list(result))
     return render_template('rk_manage/show_relations_pd.html', rels=relations, form=form)
+
+
+@rk_manage.route('/download/file/<string:filename>', methods=['GET'])
+@rkuser_required
+@login_required
+def download_file(filename):
+    if request.method == "GET":
+        if os.path.isfile(os.path.join('app\\_uploads', filename)):
+            return send_from_directory(directory='_uploads', filename=filename, as_attachment=True)
+        abort(404)
+
+# 初始化
+@rk_manage.route('/initial', methods=['GET', 'POST'])
+@admin_required
+@login_required
+def initial():
+    form = InitForm()
+    if form.validate_on_submit():
+        if form.file_mdb.data:
+            access = AccessHelper(form.file_mdb.data.filename)
+            sql = 'SELECT * FROM 控制公司'
+            data = access.select(sql)
+
+        if form.file_excel.data:
+            pass
+
+        return redirect(url_for('rk_manage/manage.html'))
+    return render_template('rk_manage/init_mdb.html', form=form)
+
+def get_cur_user_pros():
+    if current_user.is_administrator():
+        pros = Project.query.all()
+    else:
+        pros = Project.query.filter_by(author_id=current_user.id)
+    return pros
+
+def get_cur_user_pro2dcses(relations):
+    pros = get_cur_user_pros()
+    list = []
+    for pro in pros:
+        list.append(pro.name)
+    new_relas = []
+    for rela in relations:
+        if rela['projectname'] in list:
+            new_relas.append(rela)
+    return new_relas
+
+def get_cur_user_dcses():
+    if current_user.is_administrator():
+        dcs = DCS.query.all()
+    else:
+        dcs = DCS.query.filter_by(author_id=current_user.id)
+    return dcs
+
+def get_cur_user_dcs2pros(relations):
+    dcses = get_cur_user_dcses()
+    list = []
+    for dcs in dcses:
+        list.append(dcs.name)
+    new_relas = []
+    for rela in relations:
+        if rela['dcsname'] in list:
+            new_relas.append(rela)
+    return new_relas

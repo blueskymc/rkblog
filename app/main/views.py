@@ -15,29 +15,41 @@ from . import main
 from .. import db
 from ..decorators import rkuser_required
 from ..models import User, Blog, Comment, Label, Subject, Archive, Subsystem, HmiMode, ConfigMode
-from .forms import CreateCommentForm
+from .forms import CreateCommentForm, SerchBlogForm
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
-@main.route('/')
+@main.route('/', methods=['GET', 'POST'])
 #@rkuser_required
 def index():
+    form = SerchBlogForm()
     users = User.query.all()
     if not users:
         User.create_administrator()
         Blog.create_about_blog()
         Label.generate_default()
+        Subject.generate_default()
         Subsystem.generate_default()
         HmiMode.generate_default()
         ConfigMode.generate_default()
 
     if not current_user.is_active:
         flash('您还未登录，请先登录')
-        return render_template('index.html')
+        return render_template('index.html', form=form)
     if not current_user.is_rkuser():
         flash('请找管理员注册成热控用户！')
-        return render_template('index.html')
+        return render_template('index.html', form=form)
+    if form.validate_on_submit():
+        if not current_user.is_active:
+            flash('您还未登录，请先登录')
+            return render_template('index.html', form=form)
+        if not current_user.is_rkuser():
+            flash('请找管理员注册成热控用户！')
+            return render_template('index.html', form=form)
+        likestr = '%%%s%%' % form.content.data
+        blogs = Blog.query.filter(Blog.name.like(likestr))
+        return render_template('search_result.html', blogs=blogs)
     page = request.args.get('page', 1, type=int)
     labname = request.args.get('label', None)
     subname = request.args.get('subject', None)
@@ -53,7 +65,7 @@ def index():
         subjects = Subject.query.all()
         logging.info([p for p in pagination.iter_pages()])
         return render_template('index.html', users=users, blogs=blogs, labels=labels, subjects=subjects,
-                               label=label, pagination=pagination)
+                               label=label, pagination=pagination, form=form)
     # 选择了专题时
     if subname is not None:
         subject = Subject.query.filter_by(name=subname).first()
@@ -66,7 +78,7 @@ def index():
         archives = Archive.query.all()
         logging.info([p for p in pagination.iter_pages()])
         return render_template('index.html', users=users, blogs=blogs, labels=labels, subjects=subjects, archives=archives,
-                               subject=subject, pagination=pagination)
+                               subject=subject, pagination=pagination, form=form)
     # 选择了档案时
     if archname is not None:
         archive = Archive.query.filter_by(name=archname).first()
@@ -79,7 +91,7 @@ def index():
         archives = Archive.query.all()
         logging.info([p for p in pagination.iter_pages()])
         return render_template('index.html', users=users, blogs=blogs, labels=labels, subjects=subjects, archives=archives,
-                               archive=archive, pagination=pagination)
+                               archive=archive, pagination=pagination, form=form)
     # 未选择分类和专题时
     pagination = Blog.query.order_by(Blog.create_at.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
@@ -89,9 +101,9 @@ def index():
     subjects = Subject.query.all()
     archives = Archive.query.all()
     return render_template('index.html', users=users, blogs=blogs, labels=labels, subjects=subjects, archives=archives,
-                           pagination=pagination)
+                           pagination=pagination, form=form)
 
-@main.route('/blog/<int:id>')
+@main.route('/blog/<int:id>', methods=['GET', 'POST'])
 @rkuser_required
 def blog(id):
     blog = Blog.query.get_or_404(id)

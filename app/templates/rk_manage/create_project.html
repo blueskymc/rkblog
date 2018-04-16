@@ -8,7 +8,7 @@
     <h1>创建项目</h1>
 </div>
 <div class="col-md-6">
-    <form method='POST' role="form">
+    <form method='POST' role="form" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             {{ form.name.label }} {{ form.name(class="form-control") }}
             <br>
@@ -18,8 +18,6 @@
             <br>
             {{ form.rk_user_owner.label }} {{ form.rk_user_owner(class="form-control") }}
             <br>
-            {{ form.rk_user.label }}{{ form.rk_user(class="form-control") }}
-            <br>
             {{ form.team_leader.label }}{{ form.team_leader(class="form-control") }}
             <br>
             {{ form.project_leader.label }}{{ form.project_leader(class="form-control") }}
@@ -27,6 +25,10 @@
             {{ form.sign_date.label }}{{ form.sign_date(class="form-control") }}
             <br>
             {{ form.execute_date.label }}{{ form.execute_date(class="form-control") }}
+            <br>
+            <b>上传star压缩包：<b> {{ form.file_star }}
+            <br>
+            <b>上传转换软件压缩包：</b> {{ form.file_converter }}
             <br>
             {{ form.note.label }}{{ form.note(class="form-control", rows="4") }}
             <br>

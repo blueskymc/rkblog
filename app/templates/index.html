@@ -39,6 +39,14 @@
                         <p>欢迎访问本站</p>
                     </div>
                     <div class="sidebar-module">
+                        <h4><b>文章搜索</b></h4>
+                        <ol class="list-unstyled">
+                            <form method='POST' role="form">
+                                    {{ form.hidden_tag() }}
+                                    {{ form.content(class="form-control") }}
+                                    {{ form.submit(class="btn btn-default") }}
+                            </form>
+                        </ol>
                         <h4><b>网站导航</b></h4>
                         <ol class="list-unstyled">                           
                             <li><a href="http://www.sinosimu.com/main/user/index.asp" target="_blank">

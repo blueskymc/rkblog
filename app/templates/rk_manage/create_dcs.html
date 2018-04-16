@@ -8,7 +8,7 @@
     <h1>新建DCS</h1>
 </div>
 <div class="col-md-6">
-    <form method='POST' role="form">
+    <form method='POST' role="form" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             {{ form.name.label }} {{ form.name(class="form-control") }}
             <br>
@@ -32,9 +32,11 @@
             <br>
             {{ form.sourcecode_owner.label }}{{ form.sourcecode_owner(class="form-control") }}
             <br>
-            {{ form.alg_keeper.label }}{{ form.alg_keeper(class="form-control") }}
-            <br>
             {{ form.alg_header.label }}{{ form.alg_header(class="form-control") }}
+            <br>
+            <b>上传star压缩包：<b> {{ form.file_star }}
+            <br>
+            <b>上传转换软件压缩包：</b>{{ form.file_converter }}
             <br>
             {{ form.note.label }}{{ form.note(class="form-control", rows="4") }}
             <br>

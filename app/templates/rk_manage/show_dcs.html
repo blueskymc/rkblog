@@ -25,14 +25,12 @@
 				<th>类型</th>
 				<th>公司</th>
 				<th>版本</th>
-				<th>操作系统</th>
-				<th>已经转换</th>
-				<th>软件编写</th>
-				<th>算法编写</th>
-				<th>源码保管</th>
-				<th>源码负责</th>
-				<th>算法保管</th>
+				<th>热控负责人</th>
 				<th>算法前缀</th>
+				<th>标准算法库</th>
+				<th>上传时间</th>
+				<th>标准转换软件</th>
+				<th>上传时间</th>
 				<th>备注</th>
 				<th>操作</th>
 			</tr>
@@ -44,14 +42,24 @@
 				<td>{{item.type_dcs}}</td>
 				<td>{{item.company_name}}</td>
 				<td>{{item.version}}</td>
-				<td>{{item.plateform}}</td>
-				<td>{{item.is_convert}}</td>
-				<td>{{item.converter_developer}}</td>
-				<td>{{item.alg_developer}}</td>
-				<td>{{item.sourcecode_keeper}}</td>
-				<td>{{item.sourcecode_owner}}</td>
 				<td>{{item.alg_keeper}}</td>
 				<td>{{item.alg_header}}</td>
+				<td>
+					{% if item.upload_star_file %}
+						<a href="{{ url_for('rk_manage.download_file', filename=item.upload_star_file) }}">
+							{{ item.upload_star_real_name }}
+						</a>
+					{% endif %}
+				</td>
+				<td>{{item.upload_star_time}}</td>
+				<td>
+					{% if item.upload_converter_file %}
+						<a href="{{ url_for('rk_manage.download_file', filename=item.upload_converter_file) }}">
+							{{ item.upload_converter_real_name }}
+						</a>
+					{% endif %}
+				</td>
+				<td>{{item.upload_converter_time}}</td>
 				<td>{{item.note}}</td>
 				<td>
 					<a href="{{ url_for('rk_manage.edit_dcs', id=item.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true">-编辑</span></a>

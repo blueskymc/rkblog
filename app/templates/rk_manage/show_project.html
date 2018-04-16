@@ -22,13 +22,12 @@
 		<thead>
 			<tr>
 				<th class="th-left">项目名</th>
-				<th>客户</th>
-				<th>项目全称</th>
 				<th>热控负责人</th>
-				<th>团队经理</th>
 				<th>项目经理</th>
-				<th>合同日期</th>
-				<th>执行日期</th>
+				<th width=200>算法库</th>
+				<th>上传时间</th>
+				<th width=100>转换软件</th>
+				<th>上传时间</th>
 				<th>备注</th>
 				<th>操作</th>
 			</tr>
@@ -37,13 +36,24 @@
 		{% for item in projects %}
 			<tr>
 				<td class="th-left">{{item.name}}</td>
-				<td>{{item.customer}}</td>
-				<td>{{item.fullname}}</td>
 				<td>{{item.rk_user}}</td>
-				<td>{{item.team_leader}}</td>
 				<td>{{item.project_leader}}</td>
-				<td>{{item.sign_date}}</td>
-				<td>{{item.execute_date}}</td>
+				<td>
+					{% if item.upload_star_file %}
+						<a href="{{ url_for('rk_manage.download_file', filename=item.upload_star_file) }}">
+							{{ item.upload_star_real_name }}
+						</a>
+					{% endif %}
+				</td>
+				<td>{{item.upload_star_time}}</td>
+				<td>
+					{% if item.upload_converter_file %}
+						<a href="{{ url_for('rk_manage.download_file', filename=item.upload_converter_file) }}">
+							{{ item.upload_converter_real_name }}
+						</a>
+					{% endif %}
+				</td>
+				<td>{{item.upload_converter_time}}</td>
 				<td>{{item.note}}</td>
 				<td>
 					<a href="{{ url_for('rk_manage.edit_project', id=item.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true">-编辑</span></a>

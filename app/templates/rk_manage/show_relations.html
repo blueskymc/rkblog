@@ -9,6 +9,7 @@
 </div>
 <div class="page-header">
     <h4><li><a href="{{ url_for('rk_manage.create_relation')}}">添加DCS与项目关系</a></li></h4>
+    <h4><li><a href="{{ url_for('rk_manage.show_relations_pd')}}">显示项目与DCS列表</a></li></h4>
 </div>
 <div class="page-header">
 	<form method='POST' role="form">
@@ -41,7 +42,7 @@
 				<td>{{item['cfgname']}}</td>
 				<td>{{item['outname']}}</td>
 				<td>
-					<a href="{{ url_for('rk_manage.edit_relation', dcsname=item['dcsname'], proname=item['projectname'], subsystem=item['sysname']) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true">-编辑</span></a>
+					<a href="{{ url_for('rk_manage.edit_relation', id=item['id']) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true">-编辑</span></a>
 				</td>
 			</tr>
 		{% endfor %}

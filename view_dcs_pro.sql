@@ -4,12 +4,13 @@ DROP VIEW
 IF EXISTS `view_dcs_project`;
 CREATE VIEW `view_dcs_project` AS (
     SELECT
+        `project_dcs`.`id` AS `id`,
         `dcs`.`name` AS `dcsname`,
         `project`.`name` AS `projectname`,
         `subsystem`.`name` AS `sysname`,
         `hmi_mode`.`name` AS `hminame`,
         `config_mode`.`name` AS `cfgname`,
-        'project_dcs'.'pro_out' AS 'outname'
+        `project_dcs`.`pro_out` AS `outname`
     FROM
         (
             (
@@ -26,12 +27,13 @@ DROP VIEW
 IF EXISTS `view_project_dcs`;
 CREATE VIEW `view_project_dcs` AS (
     SELECT
+        `project_dcs`.`id` AS `id`,
         `project`.`name` AS `projectname`,
         `dcs`.`name` AS `dcsname`,
         `subsystem`.`name` AS `sysname`,
         `hmi_mode`.`name` AS `hminame`,
         `config_mode`.`name` AS `cfgname`,
-        'project_dcs'.'pro_out' AS 'outname'
+        `project_dcs`.`pro_out` AS `outname`
     FROM
         (
             (

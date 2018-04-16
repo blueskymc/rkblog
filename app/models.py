@@ -109,6 +109,8 @@ class Blog(db.Model):
     upload_file = db.Column(db.Text)
     upload_real_name = db.Column(db.Text)
     create_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    modify_at = db.Column(db.DateTime, default=datetime.utcnow)
+    modify_by_author_id = db.Column(db.Integer)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'))
     archive_id = db.Column(db.Integer, db.ForeignKey('archives.id'))
@@ -169,8 +171,9 @@ class Label(db.Model):
     @staticmethod
     def generate_default():
         if not Label.query.count():
-            L = ['DCS', 'PLC', 'C#', 'C++', 'Ovation', 'ABB', 'T3000', 'TXP', '新华', '和利时', '国电智深', '南京科远',
-                 'FOXBORO', '施耐德', '欧姆龙']
+            L = ['Ovation', 'Ovation(虚拟DPU)', 'ABB INFI90', 'I/A Win', 'I/A Unix', 'GE MARK',
+                 'EDPF', 'HOLLiAS MACS', 'MAXDNA', 'NT6000', '日立', '新华',
+                 'TXP', 'T3000', '施耐德', '西门子S7', 'Logix5000', '欧姆龙', '其他']
             for labname in L:
                 l = Label(name=labname)
                 db.session.add(l)
@@ -198,6 +201,15 @@ class Subject(db.Model):
         super(Subject, self).__init__(**kw)
         db.session.add(self)
         db.session.commit()
+
+    @staticmethod
+    def generate_default():
+        if not Subject.query.count():
+            L = ['DCS', 'PLC', '虚拟DPU', 'C++', 'C#']
+            for subname in L:
+                l = Subject(name=subname)
+                db.session.add(l)
+                db.session.commit()
 
 # 按时间分类
 class Archive(db.Model):
@@ -247,6 +259,14 @@ class DCS(db.Model):
     sourcecode_owner = db.Column(db.String(64))  # 源码负责人
     alg_keeper = db.Column(db.String(64))
     alg_header = db.Column(db.String(64))  # 算法名前缀
+    upload_star_file = db.Column(db.Text)
+    upload_star_real_name = db.Column(db.Text)
+    upload_star_time = db.Column(db.Date)
+    upload_star_user = db.Column(db.Text)
+    upload_converter_file = db.Column(db.Text)
+    upload_converter_real_name = db.Column(db.Text)
+    upload_converter_time = db.Column(db.Date)
+    upload_converter_user = db.Column(db.Text)
     note = db.Column(db.String(64))
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -321,6 +341,14 @@ class Project(db.Model):
     project_leader = db.Column(db.String(64))
     sign_date = db.Column(db.String(64))
     execute_date = db.Column(db.String(64))
+    upload_star_file = db.Column(db.Text)
+    upload_star_real_name = db.Column(db.Text)
+    upload_star_time = db.Column(db.Date)
+    upload_star_user = db.Column(db.Text)
+    upload_converter_file = db.Column(db.Text)
+    upload_converter_real_name = db.Column(db.Text)
+    upload_converter_time = db.Column(db.Date)
+    upload_converter_user = db.Column(db.Text)
     note = db.Column(db.String(64))
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     # 多对多关系模型

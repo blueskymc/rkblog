@@ -26,12 +26,10 @@ class ChangePasswordForm(FlaskForm):
 class BlogForm(FlaskForm):
     name = StringField('标题', validators=[DataRequired()])
     subjects = SelectField('选择专题', validators=[DataRequired()])
-    labels = SelectMultipleField("分类", choices=[])
-    label = StringField('文章分类', validators=[DataRequired()])
+    labels = SelectField("分类", validators=[DataRequired()])
     summary = TextAreaField('摘要', validators=[DataRequired()])
     content = PageDownField('内容', validators=[DataRequired()])
-    file = FileField(validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！'),
-                                 FileRequired(u'文件未选择！')])
+    file = FileField('上传附件', validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！')])
     submit = SubmitField('发表文章')
 
 # 创建/编辑专题

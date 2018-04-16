@@ -1,44 +1,18 @@
 {% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% block page_title %}新建DCS{% endblock %}
+{% block page_title %}初始化{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-    <h1>新建DCS</h1>
+    <h1>导入数据库</h1>
 </div>
 <div class="col-md-6">
     <form method='POST' role="form" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
-            {{ form.name.label }} {{ form.name(class="form-control") }}
+            <b>上传mdb：<b> {{ form.file_mdb }}
             <br>
-            {{ form.company_name.label }} {{ form.company_name(class="form-control") }}
-            <br>
-            {{ form.version.label }} {{ form.version(class="form-control") }}
-            <br>
-            {{ form.plateform.label }} {{ form.plateform(class="form-control") }}
-            <br>
-            {{ form.is_convert.label }}{{ form.is_convert(class="form-control") }}
-            <br>
-            {{ form.type_dcs.label }}{{ form.type_dcs(class="form-control") }}
-            <br>
-            {{ form.rk_user_owner.label }}{{ form.rk_user_owner(class="form-control") }}
-            <br>
-            {{ form.converter_developer.label }}{{ form.converter_developer(class="form-control") }}
-            <br>
-            {{ form.alg_developer.label }}{{ form.alg_developer(class="form-control") }}
-            <br>
-            {{ form.sourcecode_keeper.label }}{{ form.sourcecode_keeper(class="form-control") }}
-            <br>
-            {{ form.sourcecode_owner.label }}{{ form.sourcecode_owner(class="form-control") }}
-            <br>
-            {{ form.alg_header.label }}{{ form.alg_header(class="form-control") }}
-            <br>
-            <b>上传star压缩包：<b> {{ form.file_star }}
-            <br>
-            <b>上传转换软件压缩包：</b>{{ form.file_converter }}
-            <br>
-            {{ form.note.label }}{{ form.note(class="form-control", rows="4") }}
+            <b>上传excel：</b>{{ form.file_excel }}
             <br>
             {{ form.submit(class="btn btn-default") }}
     </form>

@@ -8,11 +8,10 @@
 ___author__ = 'MaCong'
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField, SelectMultipleField
-from wtforms.validators import DataRequired, EqualTo
-from flask_pagedown.fields import PageDownField
+from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField
+from wtforms.validators import DataRequired
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from .. import uploadset
+from .. import uploadset, uploadset_csv, uploadset_mdb
 
 # 创建/编辑项目
 class ProjectForm(FlaskForm):
@@ -25,6 +24,8 @@ class ProjectForm(FlaskForm):
     project_leader = StringField('项目负责人')
     sign_date = StringField('合同签订日期')
     execute_date = StringField('合同执行日期')
+    file_star = FileField(validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！')])
+    file_converter = FileField(validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！')])
     note = TextAreaField('备注')
     submit = SubmitField('提交')
 
@@ -43,6 +44,8 @@ class DcsForm(FlaskForm):
     sourcecode_owner = StringField('源程序负责人')
     alg_keeper = StringField('算法保管人')
     alg_header = StringField('算法前缀')
+    file_star = FileField('上传star', validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！')])
+    file_converter = FileField('上传转换软件', validators=[FileAllowed(uploadset, u'只能上传文档、图片和压缩包！')])
     note = TextAreaField('备注')
     submit = SubmitField('提交')
 
@@ -71,3 +74,9 @@ class RelFilterForm(FlaskForm):
     dcs = SelectField('选择DCS系统', validators=[DataRequired()])
     pro = SelectField('选择项目', validators=[DataRequired()])
     submit = SubmitField('筛选')
+
+# 初始化，导入数据库
+class InitForm(FlaskForm):
+    file_mdb = FileField('上传mdb', validators=[FileAllowed(uploadset, u'只能上传mdb数据库！')])
+    file_excel = FileField('上传excel', validators=[FileAllowed(uploadset, u'只能上传csv文件！')])
+    submit = SubmitField('提交')

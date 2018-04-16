@@ -12,6 +12,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import time
 import hashlib
+import os
 from . import manage
 from .. import db, uploadset
 from ..models import User, Blog, Comment, Label, Subject, Archive
@@ -41,13 +42,17 @@ def change_password():
 
 # 文章管理
 @manage.route('/blogs')
-@admin_required
 @login_required
 @rkuser_required
 def manage_blogs():
     page = request.args.get('page', 1, type=int)
-    pagination = Blog.query.order_by(Blog.create_at.desc()).paginate(
-        page, per_page=10, error_out=False)
+    if current_user.is_administrator():
+        pagination = Blog.query.order_by(Blog.create_at.desc()).paginate(
+            page, per_page=10, error_out=False)
+    else:
+        pagination = Blog.query.filter_by(author_id=current_user.id).order_by(Blog.create_at.desc()).paginate(
+            page, per_page=10, error_out=False)
+
     blogs = pagination.items
     return render_template('manage/manage_blogs.html', blogs=blogs,
                            pagination=pagination, page=page)
@@ -61,53 +66,47 @@ def create_blog():
     form = BlogForm()
     labs = Label.query.all()
     form.labels.choices = []
-    form.labels.choices += [('1', r.name) for r in labs]
+    form.labels.choices += [(r.name, r.name) for r in labs]
     subs = Subject.query.all()
     form.subjects.choices = [('无', '无')]
     form.subjects.choices += [(r.name, r.name) for r in subs]
     if form.validate_on_submit():
+        blog = Blog(name=form.name.data,
+                    summary=form.summary.data,
+                    content=form.content.data,
+                    author=current_user._get_current_object())
+
+        # 上传附件
+        if form.file.data:
+            real_name = form.file.data.filename
+            name = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            uploadFile = uploadset.save(form.file.data, name=name+'.')
+            blog.upload_file = uploadFile
+            blog.upload_real_name = real_name
+
+        # 博客添加专题
         subject = form.subjects.data
-        real_name = form.file.data.filename
-        name = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
-        uploadFile = uploadset.save(form.file.data, name=name+'.')
-        #blog = Blog()
         if subject != '无':
-            sub = Subject.query.all()[0]
-            blog = Blog(name=form.name.data, summary=form.summary.data,
-                        content=form.content.data,
-                        subject=sub,
-                        upload_file=uploadFile,
-                        upload_real_name=real_name,
-                        author=current_user._get_current_object())
-            flash(subject)
-            db.session.add(blog)
-        else:
-            blog = Blog(name=form.name.data, summary=form.summary.data,
-                        content=form.content.data,
-                        upload_file=uploadFile,
-                        upload_real_name=real_name,
-                        author=current_user._get_current_object())
-            db.session.add(blog)
-        labels = form.label.data.split(';')
-        #labels = form.labels.data
-        for label in labels:
-            if label:
-                # 找标签是否存在
-                lab = Label.query.filter_by(name=label).first()
-                # 若不存在，则新建标签
-                if lab is None:
-                    newlab = Label(name=label)
-                    newlab.blogs.append(blog)
-                    db.session.add(newlab)
-                else:
-                    lab.blogs.append(blog)
-                    db.session.add(lab)
-        if subject is not '无':
+            sub = Subject.query.filter_by(name=subject).first()
+            blog.subject_id = sub.id
+        db.session.add(blog)
+
+        # 标签
+        label = form.labels.data
+        if label:
+            lab = Label.query.filter_by(name=label).first()
+            if lab:
+                lab.blogs.append(blog)
+                db.session.add(lab)
+
+        # 专题添加博客
+        if subject != '无':
             sub = Subject.query.filter_by(name=subject).first()
             if sub:
                 sub.blogs.append(blog)
                 db.session.add(sub)
 
+        # 档案-时间分类
         str_time = datetime.now().strftime('%y-%m')
         arc = Archive.query.filter_by(name=str_time).first()
         # 若不存在，则新建标签
@@ -131,41 +130,71 @@ def create_blog():
 def edit_blog(id):
     blog = Blog.query.get_or_404(id)
     form = BlogForm()
+    labs = Label.query.all()
+    form.labels.choices = []
+    form.labels.choices += [(r.name, r.name) for r in labs]
+    subs = Subject.query.all()
+    form.subjects.choices = [('无', '无')]
+    form.subjects.choices += [(r.name, r.name) for r in subs]
     if form.validate_on_submit():
         blog.name = form.name.data
         blog.summary = form.summary.data
         blog.content = form.content.data
-        db.session.add(blog)
         # 暴力修改，先删掉所有标签，再把标签栏里全部新增
         for l in blog.labels.all():
             l.blogs.remove(blog)
             db.session.add(l)
-            # 清理无内容标签
-            if l.blogs.count() == 0:
-                db.session.delete(l)
         db.session.commit()
-        # 加标签
-        labels = form.label.data.split(';')
-        for label in labels:
-            # 判断标签名存在
-            if label:
-                # 标签在数据库是否存在
-                lab = Label.query.filter_by(name=label).first()
-                # 创建新的分类标签
-                if lab is None:
-                    newlab = Label(name=label)
-                    newlab.blogs.append(blog)
-                    db.session.add(newlab)
-                else:
-                    lab.blogs.append(blog)
-                    db.session.add(lab)
+
+        # 标签
+        label = form.labels.data
+        if label:
+            lab = Label.query.filter_by(name=label).first()
+            if lab:
+                lab.blogs.append(blog)
+                db.session.add(lab)
+
+        # 上传附件
+        if form.file.data:
+            filePath = os.path.join('app\\_uploads', blog.upload_file)  # 先删除旧文件
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            real_name = form.file.data.filename
+            name = hashlib.md5((current_user.username + str(time.time())).encode('UTF-8')).hexdigest()[:15]
+            uploadFile = uploadset.save(form.file.data, name=name + '.')
+            blog.upload_file = uploadFile
+            blog.upload_real_name = real_name
+
+        # 专题
+        subject = form.subjects.data
+        if subject != '无':
+            if subject != Subject.query.filter_by(id=blog.subject_id).first().name:  # 专题发生变化
+                blog.subject_id = Subject.query.filter_by(name=subject).first().id  # 博客修改专题
+                # 删除原专题中的博客
+                for sub in Subject.query.all():
+                    if blog in sub.blogs:
+                        sub.blogs.remove(blog)
+                        db.session.commit()
+                # 专题添加博客
+                sub = Subject.query.filter_by(name=subject).first()
+                if sub:
+                    sub.blogs.append(blog)
+                    db.session.add(sub)
         db.session.commit()
         return redirect(url_for('main.blog', id=blog.id))
     form.name.data = blog.name
-    # blog.labels.all() 返回多个labels，获取他们的name，并转换成以;链接的str
-    form.label.data = ';'.join([lab.name for lab in blog.labels.all()])
     form.summary.data = blog.summary
     form.content.data = blog.content
+    sub_blog = Subject.query.filter_by(id=blog.subject_id).first()
+    if sub_blog:
+        form.subjects.data = sub_blog.name
+    else:
+        form.subjects.data = '无'
+    lab_blog = blog.labels.first()
+    if lab_blog:
+        form.labels.data = lab_blog.name
+    else:
+        form.labels.data = 'DCS'
     return render_template('manage/edit_blog.html', form=form)
 
 
@@ -183,9 +212,16 @@ def delete_blog(id):
         for lab in blog.labels.all():
             lab.blogs.remove(blog)
             db.session.add(lab)
-            # 清理无内容标签
-            if lab.blogs.count() == 0:
-                db.session.delete(lab)
+    # 删除原专题中的博客
+    for sub in Subject.query.all():
+        if blog in sub.blogs:
+            sub.blogs.remove(blog)
+            db.session.commit()
+    # 删除档案中的博客
+    for arc in Archive.query.all():
+        if blog in arc.blogs:
+            arc.blogs.remove(blog)
+            db.session.commit()
     db.session.delete(blog)
     db.session.commit()
     flash('文章已删除')

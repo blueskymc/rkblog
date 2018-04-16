@@ -27,6 +27,8 @@ mail = Mail()
 babel = Babel()
 pagedown = PageDown()
 uploadset = UploadSet('files', DEFAULTS + ARCHIVES)
+uploadset_csv = UploadSet('csv', tuple('csv xls xlsx'.split()))
+uploadset_mdb = UploadSet('mdb', tuple('mdb mb'.split()))
 abs_upload_path = ''
 
 login_manager = LoginManager()
